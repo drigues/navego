@@ -1,10 +1,14 @@
 @php $isEdit = isset($news) && $news->exists; @endphp
 
-<x-admin-layout :title="$isEdit ? 'Editar Notícia' : 'Nova Notícia'">
+@extends('layouts.admin')
 
-    <x-slot name="head">
-        <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
-    </x-slot>
+@section('title', $isEdit ? 'Editar Notícia' : 'Nova Notícia')
+
+@section('head')
+    <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+@endsection
+
+@section('content')
 
     <div class="flex items-center gap-3 mb-6">
         <a href="{{ route('admin.noticias') }}"
@@ -20,8 +24,9 @@
           method="POST"
           class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         @csrf
-        @if($isEdit) @method('PUT') @endif
+        @if($isEdit) @method('PATCH') @endif
 
+        {{-- Validation errors --}}
         @if($errors->any())
             <div class="lg:col-span-3 bg-red-50 border border-red-200 rounded-xl px-5 py-4">
                 <ul class="text-sm text-red-700 list-disc list-inside space-y-0.5">
@@ -47,7 +52,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Excerto</label>
                         <textarea name="excerpt" rows="2"
                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                  placeholder="Resumo breve (máx. 500 caracteres)">{{ old('excerpt', $news->excerpt ?? '') }}</textarea>
+                                  placeholder="Resumo breve exibido na listagem (máx. 500 caracteres)">{{ old('excerpt', $news->excerpt ?? '') }}</textarea>
                     </div>
 
                     {{-- Markdown editor --}}
@@ -69,29 +74,13 @@
                             </div>
                         </div>
                         <div x-show="tab === 'write'">
-                            <textarea name="content" x-model="content" rows="20" required
+                            <textarea name="content" x-model="content" rows="22" required
                                       class="w-full rounded-lg border-gray-300 shadow-sm text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500 resize-y"
-                                      placeholder="## Título\n\nEscreve o conteúdo em Markdown..."></textarea>
+                                      placeholder="## Título&#10;&#10;Escreve o conteúdo em Markdown..."></textarea>
                         </div>
                         <div x-show="tab === 'preview'" x-cloak
-                             class="min-h-[20rem] p-4 rounded-lg border border-gray-300 bg-white prose prose-sm max-w-none"
+                             class="min-h-[22rem] p-4 rounded-lg border border-gray-300 bg-white prose prose-sm max-w-none"
                              x-html="preview"></div>
-                    </div>
-
-                    {{-- Source --}}
-                    <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Nome da fonte</label>
-                            <input type="text" name="source_name" value="{{ old('source_name', $news->source_name ?? '') }}"
-                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="Ex: Público, AIMA">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">URL da fonte</label>
-                            <input type="url" name="source_url" value="{{ old('source_url', $news->source_url ?? '') }}"
-                                   class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="https://...">
-                        </div>
                     </div>
                 </div>
             </div>
@@ -105,50 +94,35 @@
                 </div>
                 <div class="p-5 space-y-4">
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Estado <span class="text-red-500">*</span></label>
-                        <select name="status" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="draft"     {{ old('status', $news->status ?? 'draft') === 'draft'     ? 'selected' : '' }}>Rascunho</option>
-                            <option value="published" {{ old('status', $news->status ?? '') === 'published' ? 'selected' : '' }}>Publicada</option>
-                            <option value="archived"  {{ old('status', $news->status ?? '') === 'archived'  ? 'selected' : '' }}>Arquivada</option>
-                        </select>
-                    </div>
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
+                        <input type="checkbox" name="is_published" value="1"
+                               {{ old('is_published', $news->is_published ?? false) ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Publicada</p>
+                            <p class="text-xs text-gray-400">Visível no site para todos</p>
+                        </div>
+                    </label>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Data de publicação</label>
                         <input type="datetime-local" name="published_at"
                                value="{{ old('published_at', isset($news->published_at) ? $news->published_at->format('Y-m-d\TH:i') : '') }}"
                                class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Idioma <span class="text-red-500">*</span></label>
-                        <select name="language" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            @foreach(['pt' => 'Português', 'en' => 'Inglês', 'es' => 'Espanhol', 'fr' => 'Francês'] as $code => $name)
-                                <option value="{{ $code }}" {{ old('language', $news->language ?? 'pt') === $code ? 'selected' : '' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
-                        <input type="text" name="tags"
-                               value="{{ old('tags', is_array($news->tags ?? null) ? implode(', ', $news->tags) : '') }}"
-                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="imigração, portugal, lei">
-                        <p class="text-xs text-gray-400 mt-1">Separadas por vírgula.</p>
+                        <p class="text-xs text-gray-400 mt-1">Deixa em branco para usar a data actual.</p>
                     </div>
 
                     @if($isEdit)
                         <dl class="text-xs text-gray-400 space-y-1 pt-2 border-t border-gray-100">
                             <div class="flex justify-between">
-                                <dt>Vistas</dt><dd class="font-medium text-gray-600">{{ number_format($news->views_count) }}</dd>
+                                <dt>Criada</dt><dd>{{ $news->created_at->format('d/m/Y') }}</dd>
                             </div>
                             <div class="flex justify-between">
-                                <dt>Criada</dt><dd>{{ $news->created_at->format('d/m/Y') }}</dd>
+                                <dt>Actualizada</dt><dd>{{ $news->updated_at->format('d/m/Y') }}</dd>
                             </div>
                         </dl>
                     @endif
+
                 </div>
             </div>
 
@@ -166,4 +140,4 @@
 
     </form>
 
-</x-admin-layout>
+@endsection

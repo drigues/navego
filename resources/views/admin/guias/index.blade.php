@@ -1,12 +1,11 @@
-<x-admin-layout title="Guias">
+@extends('layouts.admin')
+
+@section('title', 'Guias')
+
+@section('content')
 
     @php
-    $statusConfig = [
-        'draft'     => ['label' => 'Rascunho',   'badge' => 'bg-gray-100 text-gray-600'],
-        'published' => ['label' => 'Publicado',  'badge' => 'bg-emerald-100 text-emerald-700'],
-        'archived'  => ['label' => 'Arquivado',  'badge' => 'bg-amber-100 text-amber-700'],
-    ];
-    $statusTabs = ['all' => 'Todos', 'draft' => 'Rascunhos', 'published' => 'Publicados', 'archived' => 'Arquivados'];
+    $statusTabs = ['all' => 'Todos', 'published' => 'Publicados', 'draft' => 'Rascunhos'];
     $currentStatus = request('status', 'all');
     @endphp
 
@@ -30,7 +29,7 @@
                           {{ $currentStatus === $key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
                     {{ $label }}
                     <span class="text-xs px-1.5 py-0.5 rounded-full {{ $currentStatus === $key ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500' }}">
-                        {{ $counts[$key] ?? $counts['all'] }}
+                        {{ $counts[$key] ?? 0 }}
                     </span>
                 </a>
             @endforeach
@@ -68,8 +67,6 @@
                         <tr>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Título</th>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Categoria</th>
-                            <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Idioma</th>
-                            <th class="text-center text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Vistas</th>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Estado</th>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Publicado</th>
                             <th class="px-5 py-3"></th>
@@ -77,21 +74,22 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @foreach($guides as $guide)
-                            @php $sc = $statusConfig[$guide->status] ?? $statusConfig['draft']; @endphp
                             <tr class="hover:bg-gray-50 transition-colors {{ $guide->trashed() ? 'opacity-50' : '' }}">
                                 <td class="px-5 py-3.5">
                                     <p class="font-medium text-gray-900 max-w-xs truncate">{{ $guide->title }}</p>
-                                    <p class="text-xs text-gray-400">{{ $guide->author->name }}</p>
+                                    <p class="text-xs text-gray-400 font-mono">{{ $guide->slug }}</p>
                                 </td>
-                                <td class="px-5 py-3.5 text-gray-500">{{ $guide->category?->name ?? '—' }}</td>
+                                <td class="px-5 py-3.5 text-gray-500">{{ $guide->category ?? '—' }}</td>
                                 <td class="px-5 py-3.5">
-                                    <span class="uppercase text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{{ $guide->language }}</span>
-                                </td>
-                                <td class="px-5 py-3.5 text-center text-gray-600">{{ number_format($guide->views_count) }}</td>
-                                <td class="px-5 py-3.5">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $sc['badge'] }}">
-                                        {{ $sc['label'] }}
-                                    </span>
+                                    @if($guide->is_published)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                                            Publicado
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                            Rascunho
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-3.5 text-xs text-gray-400">
                                     {{ $guide->published_at?->format('d/m/Y') ?? '—' }}
@@ -103,10 +101,12 @@
                                                class="px-2.5 py-1 text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors">
                                                 Editar
                                             </a>
-                                            <a href="{{ route('guias.show', $guide->slug) }}" target="_blank"
-                                               class="px-2.5 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                                Ver
-                                            </a>
+                                            @if($guide->is_published)
+                                                <a href="{{ route('guias.show', $guide->slug) }}" target="_blank"
+                                                   class="px-2.5 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                                    Ver
+                                                </a>
+                                            @endif
                                             <form action="{{ route('admin.guias.destroy', $guide) }}" method="POST">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" onclick="return confirm('Eliminar este guia?')"
@@ -131,4 +131,4 @@
         @endif
     @endif
 
-</x-admin-layout>
+@endsection

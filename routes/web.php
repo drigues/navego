@@ -68,11 +68,13 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // Prestadores
     Route::get('/prestadores', [AdminController::class, 'prestadores'])->name('prestadores');
     Route::get('/prestadores/{provider}', [AdminController::class, 'showPrestador'])->name('prestadores.show');
-    Route::post('/prestadores/{provider}/status', [AdminController::class, 'updateStatus'])->name('prestadores.status');
+    Route::patch('/prestadores/{provider}/aprovar', [AdminController::class, 'aprovar'])->name('prestadores.aprovar');
+    Route::patch('/prestadores/{provider}/rejeitar', [AdminController::class, 'rejeitar'])->name('prestadores.rejeitar');
 
     // Categorias
     Route::get('/categorias', [AdminController::class, 'categorias'])->name('categorias');
     Route::post('/categorias', [AdminController::class, 'storeCategoria'])->name('categorias.store');
+    Route::get('/categorias/{category}/editar', [AdminController::class, 'editCategoria'])->name('categorias.edit');
     Route::patch('/categorias/{category}', [AdminController::class, 'updateCategoria'])->name('categorias.update');
     Route::delete('/categorias/{category}', [AdminController::class, 'destroyCategoria'])->name('categorias.destroy');
 

@@ -1,10 +1,14 @@
 @php $isEdit = isset($guide) && $guide->exists; @endphp
 
-<x-admin-layout :title="$isEdit ? 'Editar Guia' : 'Novo Guia'">
+@extends('layouts.admin')
 
-    <x-slot name="head">
-        <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
-    </x-slot>
+@section('title', $isEdit ? 'Editar Guia' : 'Novo Guia')
+
+@section('head')
+    <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+@endsection
+
+@section('content')
 
     {{-- Header --}}
     <div class="flex items-center gap-3 mb-6">
@@ -21,7 +25,7 @@
           method="POST"
           class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         @csrf
-        @if($isEdit) @method('PUT') @endif
+        @if($isEdit) @method('PATCH') @endif
 
         {{-- Validation errors --}}
         @if($errors->any())
@@ -34,7 +38,6 @@
 
         {{-- LEFT: Main content --}}
         <div class="lg:col-span-2 space-y-5">
-
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-gray-100 bg-gray-50">
                     <h3 class="text-sm font-semibold text-gray-900">Conteúdo</h3>
@@ -58,9 +61,7 @@
                         tab: 'write',
                         content: @js(old('content', $guide->content ?? '')),
                         preview: '',
-                        updatePreview() {
-                            this.preview = marked.parse(this.content);
-                        }
+                        updatePreview() { this.preview = marked.parse(this.content); }
                     }">
                         <div class="flex items-center justify-between mb-2">
                             <label class="text-sm font-medium text-gray-700">Conteúdo (Markdown) <span class="text-red-500">*</span></label>
@@ -73,17 +74,15 @@
                                         class="px-3 py-1.5 transition-colors border-l border-gray-200">Pré-visualizar</button>
                             </div>
                         </div>
-
                         <div x-show="tab === 'write'">
                             <textarea name="content" x-model="content" rows="22" required
                                       class="w-full rounded-lg border-gray-300 shadow-sm text-sm font-mono focus:ring-indigo-500 focus:border-indigo-500 resize-y"
-                                      placeholder="# Título\n\nEscreve o conteúdo em Markdown..."></textarea>
+                                      placeholder="# Título&#10;&#10;Escreve o conteúdo em Markdown..."></textarea>
                         </div>
                         <div x-show="tab === 'preview'" x-cloak
                              class="min-h-[22rem] p-4 rounded-lg border border-gray-300 bg-white prose prose-sm max-w-none"
                              x-html="preview"></div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -96,58 +95,38 @@
                 </div>
                 <div class="p-5 space-y-4">
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Estado <span class="text-red-500">*</span></label>
-                        <select name="status" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="draft"     {{ old('status', $guide->status ?? 'draft') === 'draft'     ? 'selected' : '' }}>Rascunho</option>
-                            <option value="published" {{ old('status', $guide->status ?? '') === 'published' ? 'selected' : '' }}>Publicado</option>
-                            <option value="archived"  {{ old('status', $guide->status ?? '') === 'archived'  ? 'selected' : '' }}>Arquivado</option>
-                        </select>
-                    </div>
+                    <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
+                        <input type="checkbox" name="is_published" value="1"
+                               {{ old('is_published', $guide->is_published ?? false) ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Publicado</p>
+                            <p class="text-xs text-gray-400">Visível no site para todos</p>
+                        </div>
+                    </label>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Data de publicação</label>
                         <input type="datetime-local" name="published_at"
                                value="{{ old('published_at', isset($guide->published_at) ? $guide->published_at->format('Y-m-d\TH:i') : '') }}"
                                class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <p class="text-xs text-gray-400 mt-1">Deixa em branco para usar a data actual ao publicar.</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Idioma <span class="text-red-500">*</span></label>
-                        <select name="language" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            @foreach(['pt' => 'Português', 'en' => 'Inglês', 'es' => 'Espanhol', 'fr' => 'Francês'] as $code => $name)
-                                <option value="{{ $code }}" {{ old('language', $guide->language ?? 'pt') === $code ? 'selected' : '' }}>{{ $name }}</option>
-                            @endforeach
-                        </select>
+                        <p class="text-xs text-gray-400 mt-1">Deixa em branco para usar a data actual.</p>
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Categoria</label>
-                        <select name="category_id" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <select name="category" class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                             <option value="">— Sem categoria —</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ old('category_id', $guide->category_id ?? '') == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->name }}
+                            @foreach($categories as $catName)
+                                <option value="{{ $catName }}" {{ old('category', $guide->category ?? '') === $catName ? 'selected' : '' }}>
+                                    {{ $catName }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
-                        <input type="text" name="tags"
-                               value="{{ old('tags', is_array($guide->tags ?? null) ? implode(', ', $guide->tags) : '') }}"
-                               class="w-full rounded-lg border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="nif, documentos, portugal">
-                        <p class="text-xs text-gray-400 mt-1">Separadas por vírgula.</p>
-                    </div>
-
                     @if($isEdit)
                         <dl class="text-xs text-gray-400 space-y-1 pt-2 border-t border-gray-100">
-                            <div class="flex justify-between">
-                                <dt>Vistas</dt><dd class="font-medium text-gray-600">{{ number_format($guide->views_count) }}</dd>
-                            </div>
                             <div class="flex justify-between">
                                 <dt>Criado</dt><dd>{{ $guide->created_at->format('d/m/Y') }}</dd>
                             </div>
@@ -174,4 +153,4 @@
 
     </form>
 
-</x-admin-layout>
+@endsection

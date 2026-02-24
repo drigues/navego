@@ -36,16 +36,14 @@
     {{-- Stats grid --}}
     @php
     $cards = [
-        ['label' => 'Pendentes',         'value' => $stats['pending_quotes'],   'bg' => 'bg-amber-50',   'icon_color' => 'text-amber-500',   'text_color' => 'text-amber-600',   'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',                                                                               'link' => route('prestador.orcamentos', ['status' => 'pending'])],
-        ['label' => 'Respondidos',       'value' => $stats['replied_quotes'],   'bg' => 'bg-blue-50',    'icon_color' => 'text-blue-500',    'text_color' => 'text-blue-600',    'icon' => 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z',             'link' => route('prestador.orcamentos', ['status' => 'replied'])],
-        ['label' => 'Concluídos',        'value' => $stats['completed_quotes'], 'bg' => 'bg-emerald-50', 'icon_color' => 'text-emerald-500', 'text_color' => 'text-emerald-600', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',                                                                          'link' => route('prestador.orcamentos', ['status' => 'completed'])],
-        ['label' => 'Total Orçamentos',  'value' => $stats['total_quotes'],     'bg' => 'bg-indigo-50',  'icon_color' => 'text-indigo-500',  'text_color' => 'text-indigo-600',  'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'link' => route('prestador.orcamentos')],
-        ['label' => 'Serviços Activos',  'value' => $stats['active_services'],  'bg' => 'bg-violet-50',  'icon_color' => 'text-violet-500',  'text_color' => 'text-violet-600',  'icon' => 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', 'link' => null],
-        ['label' => 'Total Serviços',    'value' => $stats['total_services'],   'bg' => 'bg-gray-100',   'icon_color' => 'text-gray-400',    'text_color' => 'text-gray-600',    'icon' => 'M4 6h16M4 10h16M4 14h16M4 18h16',                                                                                        'link' => null],
+        ['label' => 'Novos Pedidos',    'value' => $stats['new_quotes'],     'bg' => 'bg-amber-50',   'icon_color' => 'text-amber-500',   'text_color' => 'text-amber-600',   'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',                                                                                'link' => route('prestador.orcamentos', ['status' => 'new'])],
+        ['label' => 'Respondidos',      'value' => $stats['replied_quotes'], 'bg' => 'bg-purple-50',  'icon_color' => 'text-purple-500',  'text_color' => 'text-purple-600',  'icon' => 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z',              'link' => route('prestador.orcamentos', ['status' => 'replied'])],
+        ['label' => 'Fechados',         'value' => $stats['closed_quotes'],  'bg' => 'bg-gray-100',   'icon_color' => 'text-gray-400',    'text_color' => 'text-gray-600',    'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',                                                                           'link' => route('prestador.orcamentos', ['status' => 'closed'])],
+        ['label' => 'Total Orçamentos', 'value' => $stats['total_quotes'],   'bg' => 'bg-indigo-50',  'icon_color' => 'text-indigo-500',  'text_color' => 'text-indigo-600',  'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'link' => route('prestador.orcamentos')],
     ];
     @endphp
 
-    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         @foreach($cards as $card)
             <div class="bg-white rounded-xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div class="flex items-start justify-between">
@@ -85,29 +83,24 @@
         @else
             @php
             $statusConfig = [
-                'pending'   => ['label' => 'Pendente',   'class' => 'bg-amber-100 text-amber-700'],
-                'viewed'    => ['label' => 'Visto',      'class' => 'bg-blue-100 text-blue-700'],
-                'replied'   => ['label' => 'Respondido', 'class' => 'bg-purple-100 text-purple-700'],
-                'accepted'  => ['label' => 'Aceite',     'class' => 'bg-green-100 text-green-700'],
-                'rejected'  => ['label' => 'Recusado',   'class' => 'bg-red-100 text-red-700'],
-                'completed' => ['label' => 'Concluído',  'class' => 'bg-emerald-100 text-emerald-700'],
-                'cancelled' => ['label' => 'Cancelado',  'class' => 'bg-gray-100 text-gray-500'],
+                'new'     => ['label' => 'Novo',        'class' => 'bg-amber-100 text-amber-700'],
+                'viewed'  => ['label' => 'Visto',       'class' => 'bg-blue-100 text-blue-700'],
+                'replied' => ['label' => 'Respondido',  'class' => 'bg-purple-100 text-purple-700'],
+                'closed'  => ['label' => 'Fechado',     'class' => 'bg-gray-100 text-gray-500'],
             ];
             @endphp
             <div class="divide-y divide-gray-50">
                 @foreach($recentQuotes as $quote)
-                    @php $sc = $statusConfig[$quote->status] ?? $statusConfig['pending']; @endphp
+                    @php $sc = $statusConfig[$quote->status] ?? $statusConfig['new']; @endphp
                     <a href="{{ route('prestador.orcamentos.show', $quote) }}"
                        class="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
                         <div class="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-sm shrink-0">
-                            {{ strtoupper(substr($quote->user->name, 0, 1)) }}
+                            {{ strtoupper(substr($quote->name, 0, 1)) }}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 truncate">{{ $quote->title }}</p>
+                            <p class="text-sm font-medium text-gray-900 truncate">{{ $quote->name }}</p>
                             <p class="text-xs text-gray-400 mt-0.5">
-                                {{ $quote->user->name }}
-                                @if($quote->service) · {{ $quote->service->name }} @endif
-                                · {{ $quote->created_at->diffForHumans() }}
+                                {{ $quote->email }} · {{ $quote->created_at->diffForHumans() }}
                             </p>
                         </div>
                         <span class="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full {{ $sc['class'] }}">

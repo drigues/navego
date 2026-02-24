@@ -26,6 +26,7 @@ class AdminController extends Controller
             'providers_pending'  => Provider::where('status', Provider::STATUS_PENDING)->count(),
             'quotes_total'       => Quote::count(),
             'quotes_new'         => Quote::where('status', Quote::STATUS_NEW)->count(),
+            'quotes_today'       => Quote::whereDate('created_at', today())->count(),
             'guides_published'   => Guide::where('is_published', true)->count(),
             'news_published'     => News::where('is_published', true)->count(),
             'providers_pro'      => Provider::where('plan', 'pro')->count(),
@@ -416,4 +417,24 @@ class AdminController extends Controller
         }
         return $slug;
     }
+
+    public function aprovar(Provider $provider): RedirectResponse
+    {
+        $provider->update(['status' => Provider::STATUS_ACTIVE]);
+        return redirect()->route('admin.prestadores')
+            ->with('success', "Prestador \"{$provider->business_name}\" aprovado com sucesso.");
+    }
+
+    public function rejeitar(Provider $provider): RedirectResponse
+    {
+        $provider->update(['status' => Provider::STATUS_REJECTED]);
+        return redirect()->route('admin.prestadores')
+            ->with('success', "Prestador \"{$provider->business_name}\" rejeitado.");
+    }
+
+    public function editCategoria(Category $category): View
+    {
+        return view('admin.categorias.edit', compact('category'));
+    }
+
 }

@@ -1,4 +1,8 @@
-<x-admin-layout title="Planos">
+@extends('layouts.admin')
+
+@section('title', 'Planos')
+
+@section('content')
 
     <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-bold text-gray-900">Gestão de Planos</h2>
@@ -7,9 +11,9 @@
     {{-- Stats --}}
     <div class="grid grid-cols-3 gap-4 mb-6">
         @foreach([
-            ['label' => 'Total Prestadores', 'value' => $planCounts['all'],   'bg' => 'bg-gray-100',   'ic' => 'text-gray-500'],
-            ['label' => 'Plano Básico',      'value' => $planCounts['basic'], 'bg' => 'bg-slate-100',  'ic' => 'text-slate-500'],
-            ['label' => 'Plano PRO',         'value' => $planCounts['pro'],   'bg' => 'bg-indigo-50',  'ic' => 'text-indigo-600'],
+            ['label' => 'Total Prestadores', 'value' => $planCounts['all'],   'ic' => 'text-gray-600'],
+            ['label' => 'Plano Básico',      'value' => $planCounts['basic'], 'ic' => 'text-slate-600'],
+            ['label' => 'Plano PRO',         'value' => $planCounts['pro'],   'ic' => 'text-indigo-600'],
         ] as $card)
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 text-center">
                 <p class="text-3xl font-bold {{ $card['ic'] }}">{{ $card['value'] }}</p>
@@ -64,7 +68,7 @@
                         <tr>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Prestador</th>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Utilizador</th>
-                            <th class="text-center text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Verificado</th>
+                            <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Estado</th>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Plano actual</th>
                             <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wide px-5 py-3">Alterar plano</th>
                         </tr>
@@ -87,15 +91,13 @@
                                     <p class="text-gray-700">{{ $prov->user->name }}</p>
                                     <p class="text-xs text-gray-400">{{ $prov->user->email }}</p>
                                 </td>
-                                <td class="px-5 py-3.5 text-center">
-                                    @if($prov->is_verified)
-                                        <svg class="w-5 h-5 text-emerald-500 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-                                        </svg>
+                                <td class="px-5 py-3.5">
+                                    @if($prov->status === 'active')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Activo</span>
+                                    @elseif($prov->status === 'pending')
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pendente</span>
                                     @else
-                                        <svg class="w-4 h-4 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">Rejeitado</span>
                                     @endif
                                 </td>
                                 <td class="px-5 py-3.5">
@@ -130,4 +132,4 @@
         @endif
     @endif
 
-</x-admin-layout>
+@endsection
