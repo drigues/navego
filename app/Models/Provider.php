@@ -35,6 +35,7 @@ class Provider extends Model
         'is_active',
         'rating',
         'reviews_count',
+        'plan',
     ];
 
     protected function casts(): array
