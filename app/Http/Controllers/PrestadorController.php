@@ -24,16 +24,14 @@ class PrestadorController extends Controller
         $provider = $this->getProvider();
 
         $stats = [
-            'total_quotes'     => $provider->quotes()->count(),
-            'pending_quotes'   => $provider->quotes()->where('status', Quote::STATUS_PENDING)->count(),
-            'replied_quotes'   => $provider->quotes()->where('status', Quote::STATUS_REPLIED)->count(),
-            'completed_quotes' => $provider->quotes()->where('status', Quote::STATUS_COMPLETED)->count(),
-            'active_services'  => $provider->activeServices()->count(),
-            'total_services'   => $provider->services()->count(),
+            'total_quotes'   => $provider->quotes()->count(),
+            'new_quotes'     => $provider->quotes()->where('status', Quote::STATUS_NEW)->count(),
+            'viewed_quotes'  => $provider->quotes()->where('status', Quote::STATUS_VIEWED)->count(),
+            'replied_quotes' => $provider->quotes()->where('status', Quote::STATUS_REPLIED)->count(),
+            'closed_quotes'  => $provider->quotes()->where('status', Quote::STATUS_CLOSED)->count(),
         ];
 
         $recentQuotes = $provider->quotes()
-            ->with('user', 'service')
             ->latest()
             ->limit(5)
             ->get();
@@ -45,9 +43,10 @@ class PrestadorController extends Controller
 
     public function editPerfil(): View
     {
-        $provider = $this->getProvider();
+        $provider   = $this->getProvider();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
 
-        return view('prestador.perfil', compact('provider'));
+        return view('prestador.perfil', compact('provider', 'categories'));
     }
 
     public function updatePerfil(Request $request): RedirectResponse
@@ -57,20 +56,13 @@ class PrestadorController extends Controller
         $data = $request->validate([
             'business_name' => ['required', 'string', 'max:200'],
             'description'   => ['nullable', 'string', 'max:3000'],
-            'website'       => ['nullable', 'url', 'max:255'],
-            'nif'           => ['nullable', 'string', 'max:20'],
             'phone'         => ['nullable', 'string', 'max:30'],
             'whatsapp'      => ['nullable', 'string', 'max:30'],
-            'contact_email' => ['nullable', 'email', 'max:255'],
+            'instagram'     => ['nullable', 'string', 'max:100'],
+            'website'       => ['nullable', 'url', 'max:255'],
             'address'       => ['nullable', 'string', 'max:255'],
             'city'          => ['nullable', 'string', 'max:100'],
-            'district'      => ['nullable', 'string', 'max:100'],
-            'postal_code'   => ['nullable', 'string', 'max:10'],
-            'languages'     => ['nullable', 'array'],
-            'languages.*'   => ['string', 'max:5'],
-            'facebook'      => ['nullable', 'url', 'max:255'],
-            'instagram'     => ['nullable', 'url', 'max:255'],
-            'linkedin'      => ['nullable', 'url', 'max:255'],
+            'category_id'   => ['nullable', 'integer', 'exists:categories,id'],
         ]);
 
         // Rebuild slug only if business name changed
@@ -82,29 +74,7 @@ class PrestadorController extends Controller
             $data['slug'] = $count > 0 ? $slug . '-' . ($count + 1) : $slug;
         }
 
-        $social = array_filter([
-            'facebook'  => $request->input('facebook'),
-            'instagram' => $request->input('instagram'),
-            'linkedin'  => $request->input('linkedin'),
-        ]);
-
-        // Parse working hours from form fields
-        $days         = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
-        $workingHours = [];
-        foreach ($days as $day) {
-            $workingHours[$day] = [
-                'closed' => (bool) $request->input("wh_{$day}_closed", false),
-                'open'   => $request->input("wh_{$day}_open", '09:00'),
-                'close'  => $request->input("wh_{$day}_close", '18:00'),
-            ];
-        }
-
-        $provider->update(array_merge($data, [
-            'social_links'  => $social ?: null,
-            'working_hours' => $workingHours,
-            'serves_remote' => $request->boolean('serves_remote'),
-            'languages'     => $request->input('languages', []),
-        ]));
+        $provider->update($data);
 
         return redirect()->route('prestador.perfil')->with('success', 'Perfil atualizado com sucesso!');
     }
@@ -115,7 +85,7 @@ class PrestadorController extends Controller
     {
         $provider = $this->getProvider();
 
-        $query = $provider->quotes()->with('user', 'service');
+        $query = $provider->quotes();
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);
@@ -124,21 +94,20 @@ class PrestadorController extends Controller
         if ($search = $request->get('search')) {
             $lower = '%' . mb_strtolower($search) . '%';
             $query->where(function ($q) use ($lower) {
-                $q->whereRaw('LOWER(title) LIKE ?', [$lower])
-                  ->orWhereHas('user', fn ($u) => $u->whereRaw('LOWER(name) LIKE ?', [$lower]));
+                $q->whereRaw('LOWER(name) LIKE ?', [$lower])
+                  ->orWhereRaw('LOWER(email) LIKE ?', [$lower])
+                  ->orWhereRaw('LOWER(description) LIKE ?', [$lower]);
             });
         }
 
         $quotes = $query->latest()->paginate(15)->withQueryString();
 
         $statusCounts = [
-            'all'       => $provider->quotes()->count(),
-            'pending'   => $provider->quotes()->where('status', 'pending')->count(),
-            'viewed'    => $provider->quotes()->where('status', 'viewed')->count(),
-            'replied'   => $provider->quotes()->where('status', 'replied')->count(),
-            'accepted'  => $provider->quotes()->where('status', 'accepted')->count(),
-            'completed' => $provider->quotes()->where('status', 'completed')->count(),
-            'rejected'  => $provider->quotes()->where('status', 'rejected')->count(),
+            'all'     => $provider->quotes()->count(),
+            'new'     => $provider->quotes()->where('status', Quote::STATUS_NEW)->count(),
+            'viewed'  => $provider->quotes()->where('status', Quote::STATUS_VIEWED)->count(),
+            'replied' => $provider->quotes()->where('status', Quote::STATUS_REPLIED)->count(),
+            'closed'  => $provider->quotes()->where('status', Quote::STATUS_CLOSED)->count(),
         ];
 
         return view('prestador.orcamentos.index', compact('provider', 'quotes', 'statusCounts'));
@@ -150,11 +119,9 @@ class PrestadorController extends Controller
         abort_if($quote->provider_id !== $provider->id, 403);
 
         // Auto-mark as viewed when provider opens it
-        if ($quote->status === Quote::STATUS_PENDING) {
+        if ($quote->status === Quote::STATUS_NEW) {
             $quote->update(['status' => Quote::STATUS_VIEWED]);
         }
-
-        $quote->load('user', 'service.category');
 
         return view('prestador.orcamentos.show', compact('provider', 'quote'));
     }
@@ -164,41 +131,20 @@ class PrestadorController extends Controller
         $provider = $this->getProvider();
         abort_if($quote->provider_id !== $provider->id, 403);
 
-        $action = $request->input('action');
+        $request->validate(['status' => ['required', 'in:new,viewed,replied,closed']]);
 
-        match ($action) {
-            'reply'    => $this->handleReply($request, $quote),
-            'accept'   => $quote->update(['status' => Quote::STATUS_ACCEPTED]),
-            'reject'   => $quote->update(['status' => Quote::STATUS_REJECTED]),
-            'complete' => $quote->update(['status' => Quote::STATUS_COMPLETED, 'completed_at' => now()]),
-            default    => null,
-        };
+        $quote->update(['status' => $request->status]);
 
         $messages = [
-            'reply'    => 'Resposta enviada com sucesso!',
-            'accept'   => 'Orçamento aceite!',
-            'reject'   => 'Orçamento recusado.',
-            'complete' => 'Trabalho marcado como concluído!',
+            Quote::STATUS_REPLIED => 'Orçamento marcado como respondido.',
+            Quote::STATUS_CLOSED  => 'Orçamento fechado.',
+            Quote::STATUS_VIEWED  => 'Orçamento marcado como visto.',
+            Quote::STATUS_NEW     => 'Estado actualizado.',
         ];
 
         return redirect()
             ->route('prestador.orcamentos.show', $quote)
-            ->with('success', $messages[$action] ?? 'Estado atualizado.');
-    }
-
-    private function handleReply(Request $request, Quote $quote): void
-    {
-        $request->validate([
-            'provider_response' => ['required', 'string', 'max:3000'],
-            'proposed_price'    => ['nullable', 'numeric', 'min:0'],
-        ]);
-
-        $quote->update([
-            'provider_response' => $request->provider_response,
-            'proposed_price'    => $request->proposed_price ?: null,
-            'status'            => Quote::STATUS_REPLIED,
-            'responded_at'      => now(),
-        ]);
+            ->with('success', $messages[$request->status] ?? 'Estado actualizado.');
     }
 
     // ── Plano ──────────────────────────────────────────────────────────────────
@@ -215,7 +161,6 @@ class PrestadorController extends Controller
                 'description' => 'Para começar no Navego sem compromisso.',
                 'color'       => 'gray',
                 'features'    => [
-                    'Até 3 serviços publicados',
                     'Perfil público básico',
                     'Receber pedidos de orçamento',
                     'Suporte por email',
@@ -223,8 +168,6 @@ class PrestadorController extends Controller
                 'missing' => [
                     'Selos de verificação PRO',
                     'Destaque na pesquisa',
-                    'Serviços ilimitados',
-                    'Estatísticas detalhadas',
                     'Suporte prioritário',
                 ],
             ],
@@ -235,14 +178,11 @@ class PrestadorController extends Controller
                 'description' => 'Para prestadores que querem crescer mais rápido.',
                 'color'       => 'indigo',
                 'features'    => [
-                    'Serviços ilimitados publicados',
-                    'Perfil completo com portfólio',
+                    'Perfil completo e destacado',
                     'Receber orçamentos ilimitados',
                     'Selo de verificação PRO',
                     'Destaque nos resultados de pesquisa',
-                    'Estatísticas e relatórios avançados',
                     'Suporte prioritário via chat',
-                    'Acesso antecipado a novas funcionalidades',
                 ],
                 'missing' => [],
             ],

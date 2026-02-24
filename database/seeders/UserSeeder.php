@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
             ['email' => 'admin@navego.pt'],
             [
                 'name' => 'Admin Navego',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('admin123'),
                 'phone' => '+351 910 000 001',
                 'nationality' => 'Portuguesa',
                 'preferred_language' => 'pt',

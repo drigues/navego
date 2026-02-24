@@ -13,15 +13,10 @@
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Pesquisar notícias..."
                        class="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"/>
             </div>
-            <select name="lingua" class="py-2.5 pl-3 pr-8 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white text-gray-700">
-                <option value="">Todos os idiomas</option>
-                <option value="pt" {{ request('lingua') === 'pt' ? 'selected' : '' }}>Português</option>
-                <option value="en" {{ request('lingua') === 'en' ? 'selected' : '' }}>English</option>
-            </select>
             <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
                 Filtrar
             </button>
-            @if(request()->hasAny(['q','lingua']))
+            @if(request()->filled('q'))
                 <a href="{{ route('noticias.index') }}" class="px-5 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">Limpar</a>
             @endif
         </form>
@@ -55,11 +50,8 @@
                         @if($featured->excerpt)
                             <p class="text-gray-500 leading-relaxed line-clamp-2 mb-4">{{ $featured->excerpt }}</p>
                         @endif
-                        <div class="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
+                        <div class="text-xs text-gray-400">
                             <span>{{ $featured->published_at->format('d M Y') }}</span>
-                            @if($featured->source_name)<span>·</span><span>{{ $featured->source_name }}</span>@endif
-                            <span>·</span>
-                            <span class="font-mono uppercase">{{ $featured->language }}</span>
                         </div>
                     </div>
                 </div>
@@ -73,16 +65,12 @@
                            class="group bg-white rounded-2xl border border-gray-100 hover:border-indigo-100 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col p-6">
                             <div class="flex items-center justify-between mb-3">
                                 <span class="text-xs text-gray-400">{{ $article->published_at->format('d M Y') }}</span>
-                                <span class="text-xs font-mono font-medium bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase">{{ $article->language }}</span>
                             </div>
                             <h3 class="font-semibold text-gray-900 leading-snug mb-2 group-hover:text-indigo-600 transition-colors flex-1">
                                 {{ $article->title }}
                             </h3>
                             @if($article->excerpt)
                                 <p class="text-sm text-gray-500 line-clamp-2 mt-1">{{ $article->excerpt }}</p>
-                            @endif
-                            @if($article->source_name)
-                                <p class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-50">{{ $article->source_name }}</p>
                             @endif
                         </a>
                     @endforeach

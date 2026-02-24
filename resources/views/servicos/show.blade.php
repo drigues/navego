@@ -7,7 +7,7 @@
     <nav class="flex items-center gap-2 text-sm text-gray-400 mb-8">
         <a href="{{ route('home') }}" class="hover:text-gray-600">Início</a>
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        <a href="{{ route('servicos.index') }}" class="hover:text-gray-600">Serviços</a>
+        <a href="{{ route('servicos.index') }}" class="hover:text-gray-600">Prestadores</a>
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         <span class="text-gray-600 truncate max-w-[200px]">{{ $provider->business_name }}</span>
     </nav>
@@ -24,222 +24,159 @@
                         {{ strtoupper(substr($provider->business_name, 0, 1)) }}
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between gap-4 flex-wrap">
-                            <div>
-                                <h1 class="text-2xl font-bold text-gray-900 leading-tight">{{ $provider->business_name }}</h1>
-                                <div class="flex items-center flex-wrap gap-2 mt-2">
-                                    @if($provider->is_verified)
-                                        <span class="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 font-medium px-2.5 py-1 rounded-full">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            Verificado
-                                        </span>
-                                    @endif
-                                    @if($provider->city)
-                                        <span class="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
-                                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                                            {{ $provider->city }}{{ $provider->district ? ', '.$provider->district : '' }}
-                                        </span>
-                                    @endif
-                                    @if($provider->serves_remote)
-                                        <span class="text-xs text-blue-600 bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-full font-medium">Atendimento remoto</span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            {{-- Rating --}}
-                            @if($provider->reviews_count > 0)
-                                <div class="text-right shrink-0">
-                                    <div class="flex items-center gap-1 justify-end">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            <svg class="w-4 h-4 {{ $i <= round($provider->rating) ? 'text-amber-400' : 'text-gray-200' }}" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                            </svg>
-                                        @endfor
-                                    </div>
-                                    <p class="text-sm font-bold text-gray-900 mt-1">{{ number_format($provider->rating, 1) }}</p>
-                                    <p class="text-xs text-gray-400">{{ $provider->reviews_count }} avaliações</p>
-                                </div>
+                        <h1 class="text-2xl font-bold text-gray-900 leading-tight">{{ $provider->business_name }}</h1>
+                        <div class="flex items-center flex-wrap gap-2 mt-2">
+                            @if($provider->status === 'active')
+                                <span class="inline-flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 font-medium px-2.5 py-1 rounded-full">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                    Activo
+                                </span>
+                            @endif
+                            @if($provider->plan === 'pro')
+                                <span class="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">PRO</span>
+                            @endif
+                            @if($provider->city)
+                                <span class="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                    {{ $provider->city }}
+                                </span>
+                            @endif
+                            @if($provider->category)
+                                <span class="text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full font-medium">
+                                    {{ $provider->category->name }}
+                                </span>
                             @endif
                         </div>
 
-                        {{-- Languages --}}
-                        @if($provider->languages)
-                            <div class="flex items-center gap-2 mt-3 flex-wrap">
-                                <span class="text-xs text-gray-400">Idiomas:</span>
-                                @foreach($provider->languages as $lang)
-                                    <span class="text-xs font-mono font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded uppercase">{{ $lang }}</span>
-                                @endforeach
+                        @if($provider->description)
+                            <div class="mt-6 pt-6 border-t border-gray-50">
+                                <p class="text-gray-600 leading-relaxed">{{ $provider->description }}</p>
                             </div>
                         @endif
                     </div>
                 </div>
-
-                @if($provider->description)
-                    <div class="mt-6 pt-6 border-t border-gray-50">
-                        <p class="text-gray-600 leading-relaxed">{{ $provider->description }}</p>
-                    </div>
-                @endif
             </div>
 
-            {{-- Services list --}}
-            @if($provider->services->isNotEmpty())
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-5">Serviços disponíveis</h2>
-                    <div class="space-y-4">
-                        @foreach($provider->services as $service)
-                            <div class="flex items-start justify-between gap-4 p-4 rounded-xl bg-gray-50 hover:bg-indigo-50 transition-colors border border-transparent hover:border-indigo-100 group">
-                                <div class="flex-1 min-w-0">
-                                    @if($service->category)
-                                        <span class="text-xs text-indigo-600 font-medium bg-indigo-100 px-2 py-0.5 rounded mb-1 inline-block">{{ $service->category->name }}</span>
-                                    @endif
-                                    <h3 class="font-semibold text-gray-900 leading-snug">{{ $service->name }}</h3>
-                                    @if($service->description)
-                                        <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ $service->description }}</p>
-                                    @endif
-                                    @if($service->tags)
-                                        <div class="flex flex-wrap gap-1 mt-2">
-                                            @foreach(array_slice($service->tags, 0, 4) as $tag)
-                                                <span class="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded">{{ $tag }}</span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                </div>
-                                <div class="text-right shrink-0">
-                                    @if($service->price_unit === 'negotiable')
-                                        <span class="text-sm font-medium text-gray-600">Negociável</span>
-                                    @elseif($service->price_min)
-                                        <span class="text-sm font-bold text-gray-900">
-                                            €{{ number_format($service->price_min, 0) }}@if($service->price_max && $service->price_max != $service->price_min)–{{ number_format($service->price_max, 0) }}@endif
-                                        </span>
-                                        <p class="text-xs text-gray-400">
-                                            {{ match($service->price_unit) {
-                                                'hour'  => '/ hora',
-                                                'day'   => '/ dia',
-                                                'month' => '/ mês',
-                                                'page'  => '/ página',
-                                                default => ''
-                                            } }}
-                                        </p>
-                                    @else
-                                        <span class="text-sm text-gray-400">A consultar</span>
-                                    @endif
-                                </div>
-                            </div>
-                        @endforeach
+            {{-- Stats bar --}}
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <dl class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <dt class="text-xs text-gray-400 uppercase tracking-wide">Pedidos recebidos</dt>
+                        <dd class="mt-1 text-2xl font-bold text-indigo-600">{{ $provider->quotes_count }}</dd>
                     </div>
-                </div>
-            @endif
+                    <div class="text-center">
+                        <dt class="text-xs text-gray-400 uppercase tracking-wide">Plano</dt>
+                        <dd class="mt-1 text-2xl font-bold text-gray-900">{{ strtoupper($provider->plan) }}</dd>
+                    </div>
+                </dl>
+            </div>
 
-            {{-- Working hours --}}
-            @if($provider->working_hours)
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h2 class="text-base font-semibold text-gray-900 mb-4">Horário de Funcionamento</h2>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        @foreach($provider->working_hours as $day => $hours)
-                            <div class="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2">
-                                <span class="text-gray-500 font-medium capitalize">{{ $day }}</span>
-                                <span class="text-gray-900 font-semibold">{{ $hours }}</span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
         </div>
 
         {{-- ===== RIGHT: Contact + Quote CTA ===== --}}
         <div class="space-y-4">
 
             {{-- Quote CTA card --}}
-            <div x-data="{ open: false }" class="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden sticky top-24">
+            <div x-data="{ open: {{ $errors->any() ? 'true' : 'false' }} }"
+                 class="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden sticky top-24">
+
                 <div class="bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 text-white">
                     <h2 class="font-bold text-lg mb-1">Solicitar Orçamento</h2>
                     <p class="text-indigo-200 text-sm">Descreve o que precisas e {{ Str::limit($provider->business_name, 20) }} irá responder.</p>
                 </div>
 
                 <div class="p-6">
-                    @auth
-                        <button @click="open = !open"
-                                class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm">
-                            <span x-show="!open">Pedir orçamento gratuito</span>
-                            <span x-show="open" x-cloak>Fechar formulário</span>
-                        </button>
 
-                        {{-- Quote form --}}
-                        <div x-show="open" x-cloak
-                             x-transition:enter="transition ease-out duration-200"
-                             x-transition:enter-start="opacity-0 -translate-y-2"
-                             x-transition:enter-end="opacity-100 translate-y-0"
-                             class="mt-5">
-                            <form method="POST" action="{{ route('orcamentos.store') }}" class="space-y-4">
-                                @csrf
-                                <input type="hidden" name="provider_id" value="{{ $provider->id }}">
-
-                                @if($provider->services->isNotEmpty())
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Serviço (opcional)</label>
-                                        <select name="service_id"
-                                                class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
-                                            <option value="">Sem preferência</option>
-                                            @foreach($provider->services as $service)
-                                                <option value="{{ $service->id }}">{{ $service->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @endif
-
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Título do pedido *</label>
-                                    <input type="text" name="title" value="{{ old('title') }}" required
-                                           placeholder="Ex: Renovação da minha AR"
-                                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 @error('title') border-red-300 @enderror"/>
-                                    @error('title')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Descreve o que precisas *</label>
-                                    <textarea name="description" rows="4" required
-                                              placeholder="Descreve a tua situação com o máximo de detalhe possível..."
-                                              class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none @error('description') border-red-300 @enderror">{{ old('description') }}</textarea>
-                                    @error('description')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Orçamento mín. (€)</label>
-                                        <input type="number" name="budget_min" value="{{ old('budget_min') }}" min="0" step="10"
-                                               placeholder="0"
-                                               class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Orçamento máx. (€)</label>
-                                        <input type="number" name="budget_max" value="{{ old('budget_max') }}" min="0" step="10"
-                                               placeholder="500"
-                                               class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
-                                    </div>
-                                </div>
-
-                                <button type="submit"
-                                        class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors text-sm">
-                                    Enviar pedido
-                                </button>
-                            </form>
+                    @if(session('success'))
+                        <div class="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-5">
+                            <svg class="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <p class="text-sm text-emerald-800 font-medium">{{ session('success') }}</p>
                         </div>
-                    @else
-                        <p class="text-sm text-gray-500 mb-4">Para solicitar um orçamento precisas de ter uma conta Navego.</p>
-                        <a href="{{ route('login') }}"
-                           class="block w-full py-3 text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-sm">
-                            Entrar para pedir orçamento
-                        </a>
-                        <a href="{{ route('register') }}"
-                           class="block w-full py-3 text-center mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-200 hover:bg-indigo-50 rounded-xl transition-colors">
-                            Criar conta gratuita
-                        </a>
-                    @endauth
+                    @endif
+
+                    @if($errors->any())
+                        <div class="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5">
+                            <ul class="text-xs text-red-700 space-y-0.5 list-disc list-inside">
+                                @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <button @click="open = !open"
+                            class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm">
+                        <span x-show="!open">Pedir orçamento gratuito</span>
+                        <span x-show="open" x-cloak>Fechar formulário</span>
+                    </button>
+
+                    {{-- Quote form (anonymous) --}}
+                    <div x-show="open" x-cloak
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="mt-5">
+                        <form method="POST" action="{{ route('orcamentos.store') }}" class="space-y-4">
+                            @csrf
+                            <input type="hidden" name="provider_id" value="{{ $provider->id }}">
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
+                                    <input type="text" name="name" value="{{ old('name') }}" required
+                                           placeholder="O seu nome"
+                                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 @error('name') border-red-300 @enderror">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Telefone</label>
+                                    <input type="tel" name="phone" value="{{ old('phone') }}"
+                                           placeholder="+351 9xx xxx xxx"
+                                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+                                <input type="email" name="email" value="{{ old('email') }}" required
+                                       placeholder="para receber a resposta"
+                                       class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 @error('email') border-red-300 @enderror">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Descrição <span class="text-red-500">*</span></label>
+                                <textarea name="description" rows="4" required
+                                          placeholder="Descreve o que precisas com o máximo de detalhe..."
+                                          class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none @error('description') border-red-300 @enderror">{{ old('description') }}</textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Prazo</label>
+                                    <input type="text" name="deadline" value="{{ old('deadline') }}"
+                                           placeholder="Ex: 2 semanas"
+                                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-700 mb-1">Orçamento est.</label>
+                                    <input type="text" name="budget_range" value="{{ old('budget_range') }}"
+                                           placeholder="Ex: €200–500"
+                                           class="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                    class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm">
+                                Enviar pedido de orçamento
+                            </button>
+
+                            <p class="text-xs text-center text-gray-400">Sem registo necessário · Gratuito</p>
+                        </form>
+                    </div>
                 </div>
             </div>
 
             {{-- Contact info --}}
-            @if($provider->phone || $provider->contact_email || $provider->website || $provider->whatsapp)
+            @if($provider->phone || $provider->website || $provider->whatsapp || $provider->instagram)
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
                     <h3 class="text-sm font-semibold text-gray-900">Contactos</h3>
                     @if($provider->phone)
@@ -255,10 +192,11 @@
                             WhatsApp
                         </a>
                     @endif
-                    @if($provider->contact_email)
-                        <a href="mailto:{{ $provider->contact_email }}" class="flex items-center gap-3 text-sm text-gray-600 hover:text-indigo-600 transition-colors">
-                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            {{ $provider->contact_email }}
+                    @if($provider->instagram)
+                        <a href="https://instagram.com/{{ ltrim($provider->instagram, '@') }}" target="_blank" rel="noopener"
+                           class="flex items-center gap-3 text-sm text-gray-600 hover:text-pink-600 transition-colors">
+                            <svg class="w-4 h-4 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                            {{ $provider->instagram }}
                         </a>
                     @endif
                     @if($provider->website)

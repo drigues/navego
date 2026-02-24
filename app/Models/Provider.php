@@ -14,60 +14,42 @@ class Provider extends Model
 
     protected $fillable = [
         'user_id',
+        'category_id',
         'business_name',
         'slug',
         'description',
         'logo',
-        'website',
-        'nif',
+        'phone',
         'address',
         'city',
-        'district',
-        'postal_code',
-        'phone',
+        'website',
+        'instagram',
         'whatsapp',
-        'contact_email',
-        'languages',
-        'social_links',
-        'working_hours',
-        'serves_remote',
-        'is_verified',
-        'is_active',
-        'rating',
-        'reviews_count',
         'plan',
+        'status',
+        'views_count',
+        'quotes_count',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'languages' => 'array',
-            'social_links' => 'array',
-            'working_hours' => 'array',
-            'serves_remote' => 'boolean',
-            'is_verified' => 'boolean',
-            'is_active' => 'boolean',
-            'rating' => 'decimal:2',
-        ];
-    }
+    const PLAN_BASIC = 'basic';
+    const PLAN_PRO   = 'pro';
+
+    const STATUS_PENDING  = 'pending';
+    const STATUS_ACTIVE   = 'active';
+    const STATUS_REJECTED = 'rejected';
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function services(): HasMany
+    public function category(): BelongsTo
     {
-        return $this->hasMany(Service::class);
+        return $this->belongsTo(Category::class);
     }
 
     public function quotes(): HasMany
     {
         return $this->hasMany(Quote::class);
-    }
-
-    public function activeServices(): HasMany
-    {
-        return $this->hasMany(Service::class)->where('is_active', true);
     }
 }

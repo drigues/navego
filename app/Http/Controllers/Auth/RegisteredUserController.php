@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Traits\RedirectsAfterAuth;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -15,13 +14,19 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    use RedirectsAfterAuth;
-
+    /**
+     * Display the registration view.
+     */
     public function create(): View
     {
         return view('auth.register');
     }
 
+    /**
+     * Handle an incoming registration request.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -36,12 +41,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole('user');
-
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect($this->redirectTo($user));
+        return redirect(route('dashboard', absolute: false));
     }
 }

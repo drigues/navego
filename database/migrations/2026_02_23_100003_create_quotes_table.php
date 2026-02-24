@@ -10,22 +10,15 @@ return new class extends Migration
     {
         Schema::create('quotes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('service_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('title');
+            $table->string('name', 150);
+            $table->string('email', 150);
+            $table->string('phone', 30)->nullable();
             $table->text('description');
-            $table->decimal('budget_min', 10, 2)->nullable();
-            $table->decimal('budget_max', 10, 2)->nullable();
-            $table->string('currency', 3)->default('EUR');
-            $table->string('status', 20)->default('pending');
-            // pending | viewed | replied | accepted | rejected | completed | cancelled
-            $table->text('provider_response')->nullable();
-            $table->decimal('proposed_price', 10, 2)->nullable();
-            $table->timestamp('responded_at')->nullable();
-            $table->timestamp('completed_at')->nullable();
+            $table->string('budget_range', 100)->nullable();
+            $table->string('deadline', 100)->nullable();
+            $table->string('status', 20)->default('new'); // new, viewed, replied, closed
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 

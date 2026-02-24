@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Guide extends Model
@@ -12,45 +11,27 @@ class Guide extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'author_id',
-        'category_id',
         'title',
         'slug',
-        'excerpt',
         'content',
-        'cover_image',
-        'language',
-        'status',
-        'tags',
-        'views_count',
+        'excerpt',
+        'featured_image',
+        'category',
+        'is_published',
         'published_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'tags' => 'array',
-            'published_at' => 'datetime',
+            'is_published'  => 'boolean',
+            'published_at'  => 'datetime',
         ];
-    }
-
-    const STATUS_DRAFT = 'draft';
-    const STATUS_PUBLISHED = 'published';
-    const STATUS_ARCHIVED = 'archived';
-
-    public function author(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'author_id');
-    }
-
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
     }
 
     public function scopePublished($query)
     {
-        return $query->where('status', self::STATUS_PUBLISHED)
+        return $query->where('is_published', true)
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
     }

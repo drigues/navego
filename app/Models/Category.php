@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
@@ -12,13 +11,10 @@ class Category extends Model
     use HasFactory;
 
     protected $fillable = [
-        'parent_id',
         'name',
         'slug',
-        'description',
         'icon',
-        'color',
-        'sort_order',
+        'description',
         'is_active',
     ];
 
@@ -29,23 +25,8 @@ class Category extends Model
         ];
     }
 
-    public function parent(): BelongsTo
+    public function providers(): HasMany
     {
-        return $this->belongsTo(Category::class, 'parent_id');
-    }
-
-    public function children(): HasMany
-    {
-        return $this->hasMany(Category::class, 'parent_id');
-    }
-
-    public function services(): HasMany
-    {
-        return $this->hasMany(Service::class);
-    }
-
-    public function guides(): HasMany
-    {
-        return $this->hasMany(Guide::class);
+        return $this->hasMany(Provider::class);
     }
 }

@@ -14,7 +14,7 @@
                 <a href="{{ route('guias.index') }}" class="hover:text-gray-600">Guias</a>
                 @if($guide->category)
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                    <a href="{{ route('guias.index', ['categoria' => $guide->category->slug]) }}" class="hover:text-gray-600">{{ $guide->category->name }}</a>
+                    <a href="{{ route('guias.index', ['categoria' => $guide->category]) }}" class="hover:text-gray-600">{{ $guide->category }}</a>
                 @endif
             </nav>
 
@@ -23,10 +23,9 @@
                 <div class="flex items-center gap-2 mb-4 flex-wrap">
                     @if($guide->category)
                         <span class="text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-                            {{ $guide->category->name }}
+                            {{ $guide->category }}
                         </span>
                     @endif
-                    <span class="text-xs font-mono font-medium bg-gray-100 text-gray-500 px-2.5 py-1 rounded uppercase">{{ $guide->language }}</span>
                 </div>
 
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4">{{ $guide->title }}</h1>
@@ -35,20 +34,8 @@
                     <p class="text-xl text-gray-500 leading-relaxed">{{ $guide->excerpt }}</p>
                 @endif
 
-                <div class="flex items-center gap-4 mt-6 pt-6 border-t border-gray-100 text-sm text-gray-400 flex-wrap">
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-xs">
-                            {{ strtoupper(substr($guide->author->name, 0, 1)) }}
-                        </div>
-                        <span>{{ $guide->author->name }}</span>
-                    </div>
-                    <span>·</span>
+                <div class="flex items-center gap-4 mt-6 pt-6 border-t border-gray-100 text-sm text-gray-400">
                     <span>{{ $guide->published_at->format('d \d\e F \d\e Y') }}</span>
-                    <span>·</span>
-                    <div class="flex items-center gap-1">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                        {{ number_format($guide->views_count) }} leituras
-                    </div>
                 </div>
             </header>
 
@@ -67,16 +54,6 @@
                 {!! Str::markdown($guide->content) !!}
             </div>
 
-            {{-- Tags --}}
-            @if($guide->tags)
-                <div class="flex flex-wrap gap-2 mt-8 pt-8 border-t border-gray-100">
-                    @foreach($guide->tags as $tag)
-                        <span class="text-xs bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 text-gray-500 font-medium px-3 py-1.5 rounded-full transition-colors cursor-default">
-                            #{{ $tag }}
-                        </span>
-                    @endforeach
-                </div>
-            @endif
         </article>
 
         {{-- ===== SIDEBAR ===== --}}
@@ -88,7 +65,7 @@
                 <p class="text-indigo-200 text-sm mb-4">Encontra prestadores especializados que falam a tua língua.</p>
                 <a href="{{ route('servicos.index') }}"
                    class="block w-full text-center py-2.5 bg-white text-indigo-700 font-semibold rounded-xl text-sm hover:bg-indigo-50 transition-colors">
-                    Ver Serviços
+                    Ver Prestadores
                 </a>
             </div>
 
@@ -101,7 +78,7 @@
                             <a href="{{ route('guias.show', $rel->slug) }}"
                                class="block group">
                                 @if($rel->category)
-                                    <span class="text-xs text-indigo-500 font-medium">{{ $rel->category->name }}</span>
+                                    <span class="text-xs text-indigo-500 font-medium">{{ $rel->category }}</span>
                                 @endif
                                 <p class="text-sm font-medium text-gray-800 group-hover:text-indigo-600 transition-colors leading-snug mt-0.5">
                                     {{ $rel->title }}

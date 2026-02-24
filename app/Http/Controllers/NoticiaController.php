@@ -12,15 +12,11 @@ class NoticiaController extends Controller
     {
         $query = News::published();
 
-        if ($request->filled('lingua')) {
-            $query->where('language', $request->lingua);
-        }
-
         if ($request->filled('q')) {
-            $search = $request->q;
+            $search = mb_strtolower($request->q);
             $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(title) LIKE ?', ['%'.mb_strtolower($search).'%'])
-                  ->orWhereRaw('LOWER(excerpt) LIKE ?', ['%'.mb_strtolower($search).'%']);
+                $q->whereRaw('LOWER(title) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(excerpt) LIKE ?', ["%{$search}%"]);
             });
         }
 
@@ -32,8 +28,6 @@ class NoticiaController extends Controller
     public function show(string $slug): View
     {
         $article = News::published()->where('slug', $slug)->firstOrFail();
-
-        $article->increment('views_count');
 
         $related = News::published()
             ->where('id', '!=', $article->id)

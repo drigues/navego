@@ -7,7 +7,6 @@ use App\Models\Guide;
 use App\Models\News;
 use App\Models\Provider;
 use App\Models\Quote;
-use App\Models\Service;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,25 +22,23 @@ class AdminController extends Controller
         $stats = [
             'users'              => User::count(),
             'providers_total'    => Provider::count(),
-            'providers_verified' => Provider::where('is_verified', true)->count(),
-            'providers_pending'  => Provider::where('is_verified', false)->where('is_active', true)->count(),
-            'services'           => Service::count(),
+            'providers_active'   => Provider::where('status', Provider::STATUS_ACTIVE)->count(),
+            'providers_pending'  => Provider::where('status', Provider::STATUS_PENDING)->count(),
             'quotes_total'       => Quote::count(),
-            'quotes_pending'     => Quote::where('status', 'pending')->count(),
-            'guides_published'   => Guide::where('status', 'published')->count(),
-            'news_published'     => News::where('status', 'published')->count(),
+            'quotes_new'         => Quote::where('status', Quote::STATUS_NEW)->count(),
+            'guides_published'   => Guide::where('is_published', true)->count(),
+            'news_published'     => News::where('is_published', true)->count(),
             'providers_pro'      => Provider::where('plan', 'pro')->count(),
         ];
 
         $recentProviders = Provider::with('user')
-            ->where('is_verified', false)
-            ->where('is_active', true)
+            ->where('status', Provider::STATUS_PENDING)
             ->latest()
             ->limit(5)
             ->get();
 
-        $recentQuotes = Quote::with('user', 'provider')
-            ->where('status', 'pending')
+        $recentQuotes = Quote::with('provider')
+            ->where('status', Quote::STATUS_NEW)
             ->latest()
             ->limit(5)
             ->get();
@@ -53,14 +50,14 @@ class AdminController extends Controller
 
     public function prestadores(Request $request): View
     {
-        $query = Provider::with('user')->withCount(['services', 'quotes']);
+        $query = Provider::with('user')->withCount('quotes');
 
         $filter = $request->get('filter', 'all');
         match ($filter) {
-            'pending'   => $query->where('is_verified', false)->where('is_active', true),
-            'verified'  => $query->where('is_verified', true)->where('is_active', true),
-            'suspended' => $query->where('is_active', false),
-            default     => null,
+            'pending'  => $query->where('status', Provider::STATUS_PENDING),
+            'active'   => $query->where('status', Provider::STATUS_ACTIVE),
+            'rejected' => $query->where('status', Provider::STATUS_REJECTED),
+            default    => null,
         };
 
         if ($search = $request->get('search')) {
@@ -75,10 +72,10 @@ class AdminController extends Controller
         $providers = $query->latest()->paginate(20)->withQueryString();
 
         $counts = [
-            'all'       => Provider::count(),
-            'pending'   => Provider::where('is_verified', false)->where('is_active', true)->count(),
-            'verified'  => Provider::where('is_verified', true)->where('is_active', true)->count(),
-            'suspended' => Provider::where('is_active', false)->count(),
+            'all'      => Provider::count(),
+            'pending'  => Provider::where('status', Provider::STATUS_PENDING)->count(),
+            'active'   => Provider::where('status', Provider::STATUS_ACTIVE)->count(),
+            'rejected' => Provider::where('status', Provider::STATUS_REJECTED)->count(),
         ];
 
         return view('admin.prestadores.index', compact('providers', 'counts', 'filter'));
@@ -86,33 +83,23 @@ class AdminController extends Controller
 
     public function showPrestador(Provider $provider): View
     {
-        $provider->load('user', 'services.category', 'quotes');
+        $provider->load('user', 'category', 'quotes');
         return view('admin.prestadores.show', compact('provider'));
     }
 
-    public function toggleVerification(Provider $provider): RedirectResponse
+    public function updateStatus(Request $request, Provider $provider): RedirectResponse
     {
-        $provider->update([
-            'is_verified' => ! $provider->is_verified,
-            'is_active'   => true,
-        ]);
+        $request->validate(['status' => ['required', 'in:pending,active,rejected']]);
 
-        $msg = $provider->is_verified
-            ? "Prestador \"{$provider->business_name}\" verificado com sucesso."
-            : "Verificação de \"{$provider->business_name}\" removida.";
+        $provider->update(['status' => $request->status]);
 
-        return back()->with('success', $msg);
-    }
+        $labels = [
+            Provider::STATUS_ACTIVE   => 'activado',
+            Provider::STATUS_REJECTED => 'rejeitado',
+            Provider::STATUS_PENDING  => 'colocado como pendente',
+        ];
 
-    public function toggleActive(Provider $provider): RedirectResponse
-    {
-        $provider->update(['is_active' => ! $provider->is_active]);
-
-        $msg = $provider->is_active
-            ? "Prestador \"{$provider->business_name}\" reactivado."
-            : "Prestador \"{$provider->business_name}\" suspenso.";
-
-        return back()->with('success', $msg);
+        return back()->with('success', "Prestador \"{$provider->business_name}\" " . ($labels[$request->status] ?? 'actualizado') . '.');
     }
 
     // ── Categorias ─────────────────────────────────────────────────────────────
@@ -120,34 +107,28 @@ class AdminController extends Controller
     public function categorias(Request $request): View
     {
         $search = $request->get('search');
-        $query  = Category::withCount(['services', 'guides', 'children'])
-            ->with('parent');
+        $query  = Category::withCount('providers');
 
         if ($search) {
             $query->whereRaw('LOWER(name) LIKE ?', ['%' . mb_strtolower($search) . '%']);
         }
 
-        $categories = $query->orderBy('sort_order')->orderBy('name')->paginate(30)->withQueryString();
-        $parents    = Category::whereNull('parent_id')->orderBy('name')->get();
+        $categories = $query->orderBy('name')->paginate(30)->withQueryString();
 
-        return view('admin.categorias.index', compact('categories', 'parents'));
+        return view('admin.categorias.index', compact('categories'));
     }
 
     public function storeCategoria(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'name'        => ['required', 'string', 'max:100'],
-            'parent_id'   => ['nullable', 'integer', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'icon'        => ['nullable', 'string', 'max:100'],
-            'color'       => ['nullable', 'string', 'max:20'],
-            'sort_order'  => ['nullable', 'integer', 'min:0'],
             'is_active'   => ['nullable', 'boolean'],
         ]);
 
         $data['slug']      = $this->uniqueSlug(Str::slug($data['name']), 'categories');
         $data['is_active'] = $request->boolean('is_active', true);
-        $data['sort_order']= (int) ($data['sort_order'] ?? 0);
 
         Category::create($data);
 
@@ -159,25 +140,16 @@ class AdminController extends Controller
     {
         $data = $request->validate([
             'name'        => ['required', 'string', 'max:100'],
-            'parent_id'   => ['nullable', 'integer', 'exists:categories,id'],
             'description' => ['nullable', 'string', 'max:500'],
             'icon'        => ['nullable', 'string', 'max:100'],
-            'color'       => ['nullable', 'string', 'max:20'],
-            'sort_order'  => ['nullable', 'integer', 'min:0'],
             'is_active'   => ['nullable', 'boolean'],
         ]);
-
-        // Prevent a category from being its own parent
-        if (isset($data['parent_id']) && $data['parent_id'] == $category->id) {
-            $data['parent_id'] = null;
-        }
 
         if ($data['name'] !== $category->name) {
             $data['slug'] = $this->uniqueSlug(Str::slug($data['name']), 'categories', $category->id);
         }
 
         $data['is_active'] = $request->boolean('is_active', true);
-        $data['sort_order']= (int) ($data['sort_order'] ?? 0);
 
         $category->update($data);
 
@@ -187,11 +159,8 @@ class AdminController extends Controller
 
     public function destroyCategoria(Category $category): RedirectResponse
     {
-        if ($category->children()->count() > 0) {
-            return back()->with('error', 'Não é possível eliminar uma categoria que tem subcategorias.');
-        }
-        if ($category->services()->count() > 0) {
-            return back()->with('error', 'Não é possível eliminar uma categoria com serviços associados.');
+        if ($category->providers()->count() > 0) {
+            return back()->with('error', 'Não é possível eliminar uma categoria com prestadores associados.');
         }
 
         $name = $category->name;
@@ -205,10 +174,10 @@ class AdminController extends Controller
 
     public function guias(Request $request): View
     {
-        $query = Guide::with('author', 'category')->withTrashed();
+        $query = Guide::withTrashed();
 
         if ($status = $request->get('status')) {
-            $query->where('status', $status);
+            $query->where('is_published', $status === 'published');
         }
         if ($search = $request->get('search')) {
             $query->whereRaw('LOWER(title) LIKE ?', ['%' . mb_strtolower($search) . '%']);
@@ -218,28 +187,29 @@ class AdminController extends Controller
 
         $counts = [
             'all'       => Guide::withTrashed()->count(),
-            'draft'     => Guide::where('status', 'draft')->count(),
-            'published' => Guide::where('status', 'published')->count(),
-            'archived'  => Guide::where('status', 'archived')->count(),
+            'published' => Guide::where('is_published', true)->count(),
+            'draft'     => Guide::where('is_published', false)->count(),
         ];
 
-        $categories = Category::whereNull('parent_id')->with('children')->orderBy('name')->get();
+        $categories = Category::orderBy('name')->pluck('name');
 
         return view('admin.guias.index', compact('guides', 'counts', 'categories'));
     }
 
     public function createGuia(): View
     {
-        $categories = Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->pluck('name');
         return view('admin.guias.form', compact('categories'));
     }
 
     public function storeGuia(Request $request): RedirectResponse
     {
-        $data = $this->validateContent($request, 'guide');
-        $data['author_id']   = auth()->id();
-        $data['slug']        = $this->uniqueSlug(Str::slug($data['title']), 'guides');
-        $data['published_at']= $data['status'] === 'published' ? ($request->published_at ? $request->published_at : now()) : null;
+        $data = $this->validateGuia($request);
+        $data['slug'] = $this->uniqueSlug(Str::slug($data['title']), 'guides');
+
+        if ($data['is_published']) {
+            $data['published_at'] = $request->filled('published_at') ? $request->published_at : now();
+        }
 
         Guide::create($data);
 
@@ -249,19 +219,22 @@ class AdminController extends Controller
 
     public function editGuia(Guide $guide): View
     {
-        $categories = Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->pluck('name');
         return view('admin.guias.form', compact('guide', 'categories'));
     }
 
     public function updateGuia(Request $request, Guide $guide): RedirectResponse
     {
-        $data = $this->validateContent($request, 'guide');
+        $data = $this->validateGuia($request);
 
         if ($data['title'] !== $guide->title) {
             $data['slug'] = $this->uniqueSlug(Str::slug($data['title']), 'guides', $guide->id);
         }
-        if ($data['status'] === 'published' && ! $guide->published_at) {
-            $data['published_at'] = $request->published_at ? $request->published_at : now();
+        if ($data['is_published'] && ! $guide->published_at) {
+            $data['published_at'] = $request->filled('published_at') ? $request->published_at : now();
+        }
+        if (! $data['is_published']) {
+            $data['published_at'] = null;
         }
 
         $guide->update($data);
@@ -283,10 +256,10 @@ class AdminController extends Controller
 
     public function noticias(Request $request): View
     {
-        $query = News::with('author')->withTrashed();
+        $query = News::withTrashed();
 
         if ($status = $request->get('status')) {
-            $query->where('status', $status);
+            $query->where('is_published', $status === 'published');
         }
         if ($search = $request->get('search')) {
             $query->whereRaw('LOWER(title) LIKE ?', ['%' . mb_strtolower($search) . '%']);
@@ -296,9 +269,8 @@ class AdminController extends Controller
 
         $counts = [
             'all'       => News::withTrashed()->count(),
-            'draft'     => News::where('status', 'draft')->count(),
-            'published' => News::where('status', 'published')->count(),
-            'archived'  => News::where('status', 'archived')->count(),
+            'published' => News::where('is_published', true)->count(),
+            'draft'     => News::where('is_published', false)->count(),
         ];
 
         return view('admin.noticias.index', compact('news', 'counts'));
@@ -311,12 +283,12 @@ class AdminController extends Controller
 
     public function storeNoticia(Request $request): RedirectResponse
     {
-        $data = $this->validateContent($request, 'news');
-        $data['author_id']   = auth()->id();
-        $data['slug']        = $this->uniqueSlug(Str::slug($data['title']), 'news');
-        $data['source_url']  = $request->input('source_url');
-        $data['source_name'] = $request->input('source_name');
-        $data['published_at']= $data['status'] === 'published' ? ($request->published_at ? $request->published_at : now()) : null;
+        $data = $this->validateNews($request);
+        $data['slug'] = $this->uniqueSlug(Str::slug($data['title']), 'news');
+
+        if ($data['is_published']) {
+            $data['published_at'] = $request->filled('published_at') ? $request->published_at : now();
+        }
 
         News::create($data);
 
@@ -331,17 +303,17 @@ class AdminController extends Controller
 
     public function updateNoticia(Request $request, News $noticia): RedirectResponse
     {
-        $data = $this->validateContent($request, 'news');
+        $data = $this->validateNews($request);
 
         if ($data['title'] !== $noticia->title) {
             $data['slug'] = $this->uniqueSlug(Str::slug($data['title']), 'news', $noticia->id);
         }
-        if ($data['status'] === 'published' && ! $noticia->published_at) {
-            $data['published_at'] = $request->published_at ? $request->published_at : now();
+        if ($data['is_published'] && ! $noticia->published_at) {
+            $data['published_at'] = $request->filled('published_at') ? $request->published_at : now();
         }
-
-        $data['source_url']  = $request->input('source_url');
-        $data['source_name'] = $request->input('source_name');
+        if (! $data['is_published']) {
+            $data['published_at'] = null;
+        }
 
         $noticia->update($data);
 
@@ -397,24 +369,35 @@ class AdminController extends Controller
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private function validateContent(Request $request, string $type): array
+    private function validateGuia(Request $request): array
     {
-        $validated = $request->validate([
+        $data = $request->validate([
             'title'       => ['required', 'string', 'max:200'],
             'excerpt'     => ['nullable', 'string', 'max:500'],
             'content'     => ['required', 'string'],
-            'language'    => ['required', 'in:pt,en,es,fr'],
-            'status'      => ['required', 'in:draft,published,archived'],
-            'tags'        => ['nullable', 'string', 'max:300'],
-            'category_id' => $type === 'guide' ? ['nullable', 'integer', 'exists:categories,id'] : ['nullable'],
+            'category'    => ['nullable', 'string', 'max:100'],
+            'featured_image' => ['nullable', 'string', 'max:255'],
+            'is_published' => ['nullable', 'boolean'],
         ]);
 
-        // Parse comma-separated tags → array
-        $validated['tags'] = $validated['tags']
-            ? array_map('trim', explode(',', $validated['tags']))
-            : null;
+        $data['is_published'] = $request->boolean('is_published', false);
 
-        return $validated;
+        return $data;
+    }
+
+    private function validateNews(Request $request): array
+    {
+        $data = $request->validate([
+            'title'          => ['required', 'string', 'max:200'],
+            'excerpt'        => ['nullable', 'string', 'max:500'],
+            'content'        => ['required', 'string'],
+            'featured_image' => ['nullable', 'string', 'max:255'],
+            'is_published'   => ['nullable', 'boolean'],
+        ]);
+
+        $data['is_published'] = $request->boolean('is_published', false);
+
+        return $data;
     }
 
     private function uniqueSlug(string $base, string $table, ?int $ignoreId = null): string
